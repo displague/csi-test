@@ -86,7 +86,38 @@ var _ = DescribeSanity("Controller Service", func(sc *SanityContext) {
 		n csi.NodeClient
 
 		cl *Cleanup
+
+		vi        string
+		ni        string
+		niInvalid string
+		viInvalid string
+		siDelete  string
+		siInvalid string
 	)
+
+	if sc.Config.TestVolumeIdIsInt {
+		vi = "12345"
+		viInvalid = "00000"
+	} else {
+		vi = "some-vol-id"
+		viInvalid = "reallyfakevolumeid"
+	}
+
+	if sc.Config.TestNodeIdIsInt {
+		ni = "9876"
+		niInvalid = "00000"
+	} else {
+		ni = "some-node-id"
+		niInvalid = "some-fake-node-id"
+	}
+
+	if sc.Config.TestSnapshotIdIsInt {
+		si = "9876"
+		siDelete = ""
+	} else {
+		svi = "testId"
+		siDelete = "DeleteSnapshot-volume-1"
+	}
 
 	BeforeEach(func() {
 		c = csi.NewControllerClient(sc.Conn)
@@ -535,7 +566,7 @@ var _ = DescribeSanity("Controller Service", func(sc *SanityContext) {
 			_, err := c.DeleteVolume(
 				context.Background(),
 				&csi.DeleteVolumeRequest{
-					VolumeId: "reallyfakevolumeid",
+					VolumeId: viInvalid,
 					Secrets:  sc.Secrets.DeleteVolumeSecret,
 				},
 			)
@@ -688,7 +719,7 @@ var _ = DescribeSanity("Controller Service", func(sc *SanityContext) {
 			_, err := c.ValidateVolumeCapabilities(
 				context.Background(),
 				&csi.ValidateVolumeCapabilitiesRequest{
-					VolumeId: "some-vol-id",
+					VolumeId: vi,
 					VolumeCapabilities: []*csi.VolumeCapability{
 						{
 							AccessType: &csi.VolumeCapability_Mount{
@@ -860,8 +891,8 @@ var _ = DescribeSanity("Controller Service", func(sc *SanityContext) {
 			conpubvol, err := c.ControllerPublishVolume(
 				context.Background(),
 				&csi.ControllerPublishVolumeRequest{
-					VolumeId: "some-vol-id",
-					NodeId:   "some-node-id",
+					VolumeId: vi,
+					NodeId:   ni,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
 							Mount: &csi.VolumeCapability_MountVolume{},
@@ -919,7 +950,7 @@ var _ = DescribeSanity("Controller Service", func(sc *SanityContext) {
 				context.Background(),
 				&csi.ControllerPublishVolumeRequest{
 					VolumeId: vol.GetVolume().GetVolumeId(),
-					NodeId:   "some-fake-node-id",
+					NodeId:   niInvalid,
 					VolumeCapability: &csi.VolumeCapability{
 						AccessType: &csi.VolumeCapability_Mount{
 							Mount: &csi.VolumeCapability_MountVolume{},
@@ -1450,7 +1481,7 @@ var _ = DescribeSanity("DeleteSnapshot [Controller Server]", func(sc *SanityCont
 
 	It("should succeed when an invalid snapshot id is used", func() {
 
-		req := MakeDeleteSnapshotReq(sc, "reallyfakesnapshotid")
+		req := MakeDeleteSnapshotReq(sc, siInvalid)
 		_, err := c.DeleteSnapshot(context.Background(), req)
 		Expect(err).NotTo(HaveOccurred())
 	})
@@ -1458,13 +1489,13 @@ var _ = DescribeSanity("DeleteSnapshot [Controller Server]", func(sc *SanityCont
 	It("should return appropriate values (no optional values added)", func() {
 
 		By("creating a volume")
-		volReq := MakeCreateVolumeReq(sc, "DeleteSnapshot-volume-1")
+		volReq := MakeCreateVolumeReq(sc, siDelete)
 		volume, err := c.CreateVolume(context.Background(), volReq)
 		Expect(err).NotTo(HaveOccurred())
 
 		// Create Snapshot First
 		By("creating a snapshot")
-		snapshotReq := MakeCreateSnapshotReq(sc, "DeleteSnapshot-snapshot-1", volume.GetVolume().GetVolumeId(), nil)
+		snapshotReq := MakeCreateSnapshotReq(sc, siDelete, volume.GetVolume().GetVolumeId(), nil)
 		snapshot, err := c.CreateSnapshot(context.Background(), snapshotReq)
 		Expect(err).NotTo(HaveOccurred())
 		Expect(snapshot).NotTo(BeNil())
@@ -1498,7 +1529,7 @@ var _ = DescribeSanity("CreateSnapshot [Controller Server]", func(sc *SanityCont
 	It("should fail when no name is provided", func() {
 
 		req := &csi.CreateSnapshotRequest{
-			SourceVolumeId: "testId",
+			SourceVolumeId: svi,
 		}
 
 		if sc.Secrets != nil {

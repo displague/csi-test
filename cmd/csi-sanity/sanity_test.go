@@ -41,6 +41,9 @@ func init() {
 	flag.StringVar(&config.StagingPath, prefix+"stagingdir", os.TempDir()+"/csi", "Mount point for NodeStage if staging is supported")
 	flag.StringVar(&config.SecretsFile, prefix+"secrets", "", "CSI secrets file")
 	flag.Int64Var(&config.TestVolumeSize, prefix+"testvolumesize", sanity.DefTestVolumeSize, "Base volume size used for provisioned volumes")
+	flag.BoolVar(&config.TestVolumeIdIsInt, prefix+"testintvolumeid", sanity.DefTestVolumeIdIsInt, "Use integer values for VolumeId")
+	flag.BoolVar(&config.TestNodeIdIsInt, prefix+"testintnodeid", sanity.DefTestNodeIdIsInt, "Use integer values for NodeId")
+	flag.BoolVar(&config.TestSnapshotIdIsInt, prefix+"testintsnapshotid", sanity.DefTestSnapshotIdIsInt, "Use integer values for SnapshotId")
 	flag.StringVar(&config.TestVolumeParametersFile, prefix+"testvolumeparameters", "", "YAML file of volume parameters for provisioned volumes")
 	flag.Parse()
 }

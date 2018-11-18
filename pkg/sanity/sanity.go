@@ -55,6 +55,9 @@ type Config struct {
 	TestVolumeSize           int64
 	TestVolumeParametersFile string
 	TestVolumeParameters     map[string]string
+	TestVolumeIdIsInt        bool
+	TestNodeIdIsInt          bool
+	TestSnapshotIdIsInt      bool
 }
 
 // SanityContext holds the variables that each test can depend on. It
